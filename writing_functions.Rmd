@@ -211,4 +211,15 @@ bind_rows(
   get_page_reviews(urls[5]))
 ```
 
+```{r}
+f = function(x) {
+  z = x + y
+  z
+}
+
+x = 1
+y = 2
+
+f(x = y)
+```
 
