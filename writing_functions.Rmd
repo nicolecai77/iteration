@@ -5,6 +5,7 @@ output: github_document
 
 ```{r setup,include=FALSE}
 library(tidyverse)
+library(rvest)
 knitr::opts_chunk$set(
   fig.width = 6,
   fig.asp =0.6,
@@ -67,6 +68,147 @@ z_scores = function(x){
 z_scores(3)
 z_scores(c("my", "name", "is", "jeff"))
 z_scores(mtcars)
+```
+
+
+## Multiple outputs
+
+```{r}
+mean_and_sd = function(x){
+  if(!is.numeric(x)){
+    stop (" x should be numeric")
+  }
+  if (length(x)<3){
+    stop ("x should have at least 3 numbers")
+  }
+
+  mean_x = mean(x)
+  sd_x =sd(x)
+  
+  output_df =tibble(
+    mean=mean_x,
+    sd=sd_x
+  )
+  return(output_df)
+}
+mean_and_sd(x_vec)
+mean_and_sd(y_vec)
+```
+
+##different sample sizes, means,sds
+```{r}
+sim_data = tibble(
+  x = rnorm(30, mean = 2, sd = 3)
+)
+
+sim_data %>% 
+  summarize(
+    mean = mean(x),
+    sd = sd(x)
+  )
+```
+
+Let's write a function that simulates data,computes the mean and sd
+we can use named matching, which uses the argument name in the function call. Named matching can be a bit more stable when you’re writing your own functions (in case you decide to change the order of the inputs, for example) but isn’t strictly necessary. Named arguments can be supplied in any order: 
+```{r}
+sim_mean_sd = function(n,mu,sigma){
+  #do checks on imputs
+  
+    sim_data = tibble(
+    x = rnorm(n, mean = mu, sd = sigma)
+  )
+  
+  sim_data %>% 
+    summarize(
+      mean = mean(x),
+      sd = sd(x)
+    )
+    
+}  
+  
+sim_mean_sd(n=30,mu=4,sigma=3)
+
+```
+
+
+## revisit
+convert them into text
+and put into the table
+
+```{r}
+url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_html = read_html(url)
+
+review_titles = 
+  dynamite_html %>%
+  html_nodes(".a-text-bold span") %>%
+  html_text()
+
+review_stars = 
+  dynamite_html %>%
+  html_nodes("#cm_cr-review_list .review-rating") %>%
+  html_text() %>%
+  str_extract("^\\d") %>%
+  as.numeric()
+
+review_text = 
+  dynamite_html %>%
+  html_nodes(".review-text-content span") %>%
+  html_text() %>% 
+  str_replace_all("\n", "") %>% 
+  str_trim()
+
+reviews = tibble(
+  title = review_titles,
+  stars = review_stars,
+  text = review_text
+)
+```
+
+okay but there are a lot of pages of review
+write a function that gets reviews based on page url
+put page into seperate page
+
+```{r}
+get_page_reviews = function(page_url){
+  page_html = read_html(page_url)
+  
+  review_titles = 
+    page_html %>%
+    html_nodes(".a-text-bold span") %>%
+    html_text()
+  
+  review_stars = 
+    page_html %>%
+    html_nodes("#cm_cr-review_list .review-rating") %>%
+    html_text() %>%
+    str_extract("^\\d") %>%
+    as.numeric()
+  
+  review_text = 
+    page_html %>%
+    html_nodes(".review-text-content span") %>%
+    html_text() %>% 
+    str_replace_all("\n", "") %>% 
+    str_trim()
+  
+  reviews = tibble(
+    title = review_titles,
+    stars = review_stars,
+    text = review_text
+  )
+   return(reviews)
+}
+base_url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
+urls = str_c(base_url,1:5)
+
+bind_rows(
+  get_page_reviews(urls[1]),
+  get_page_reviews(urls[2]),
+  get_page_reviews(urls[3]),
+  get_page_reviews(urls[4]),
+  get_page_reviews(urls[5]))
 ```
 
 
