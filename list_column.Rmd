@@ -102,3 +102,13 @@ for (i in 1:4){
   }
 ```
 
+#lets try map
+```{r}
+output=map(list_norm,mean_and_sd)
+```
+
+what if you want a different function?
+```{r}
+output=map(list_norm,median)
+```
+
